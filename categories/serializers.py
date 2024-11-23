@@ -12,7 +12,10 @@ class CategorySerializer(serializers.ModelSerializer):
         # exlude = (
         #     "created_at",
         # )
-        fields = "__all__"
+        fields = (
+            "name",
+            "kind"
+        )
 
 
 
