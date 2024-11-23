@@ -11,6 +11,7 @@ class Photo(CommonModel):
         on_delete=models.CASCADE,
         null=True,
         blank=True,
+        related_name="photos"
     )
     experience = models.ForeignKey(
         "experiences.Experience",
