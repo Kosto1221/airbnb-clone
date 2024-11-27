@@ -10,6 +10,10 @@ from .serializers import AmenitySerializer, RoomListSerializer, RoomDetailSerial
 from reviews.serializers import ReviewSerializer
 from medias.serializers import PhotoSerializer
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from bookings.models import Booking
+from bookings.serializers import PublicBookingSerializer
+from django.utils import timezone
+import datetime
 
 class Amenities(APIView):
     def get(self, request):
@@ -232,3 +236,24 @@ class RoomPhotos(APIView):
             return Response(serializer.data)
         else:
             return Response(serializer.errors)
+        
+class RoomBookings(APIView):
+
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_object(self, pk):
+        try:
+            return Room.objects.get(pk=pk)
+        except Room.DoesNotExist:
+            raise NotFound
+        
+    def get(self, request, pk):
+        room = self.get_object(pk)
+        now = timezone.localtime(timezone.now()).date()
+        bookings = Booking.objects.filter(room=room, kind=Booking.BookingKindChoices.ROOM, check_in__gt=now,)
+        serializer = PublicBookingSerializer(bookings, many=True)
+        return Response(serializer.data)
+
+
+        # 월/년 별로 보기
+        
