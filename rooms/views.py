@@ -244,7 +244,7 @@ class RoomBookings(APIView):
     def get_object(self, pk):
         try:
             return Room.objects.get(pk=pk)
-        except Room.DoesNotExist:
+        except:
             raise NotFound
         
     def get(self, request, pk):
@@ -258,7 +258,9 @@ class RoomBookings(APIView):
         room = self.get_object(pk)
         serializer = CreateRoomBookingSerializer(data=request.data)
         if serializer.is_valid():
-            return Response({"ok": True})
+            booking = serializer.save(room=room, user=request.user, kind=Booking.BookingKindChoices.ROOM,)
+            serializer = PublicBookingSerializer(booking)
+            return Response(serializer.data)
         else:
             return Response(serializer.errors)
 
