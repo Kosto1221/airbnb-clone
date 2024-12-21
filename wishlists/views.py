@@ -61,6 +61,8 @@ class WishlistDetail(APIView):
             return Response(serializer.data)
         else:
             return Response(serializer.errors)
+        
+        # ?
 
 class WishlistToggle(APIView):
     
@@ -84,4 +86,6 @@ class WishlistToggle(APIView):
         else:
             wishlist.rooms.add(room)
         return Response(status=HTTP_200_OK)
+    
+
 

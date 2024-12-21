@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from .models import Booking
 from django.utils import timezone
+from django.db.models import Sum
+from users.serializers import TinyUserSerializer
 
 class CreateRoomBookingSerializer(serializers.ModelSerializer):
 
@@ -37,6 +39,48 @@ class CreateRoomBookingSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Those (or some) of those dates are already taken.")
         return data
 
+class CreateExperienceBookingSerializer(serializers.ModelSerializer):
+
+    experience_time = serializers.DateTimeField()
+
+    class Meta:
+        model = Booking
+        fields = (
+            "experience_time",
+            "guests",
+        )
+    
+    def validate(self, data):
+        experience = self.context.get("experience")
+        experience_time = data.get("experience_time")
+        if experience_time:
+            if timezone.is_naive(experience_time):
+                experience_time = timezone.make_aware(experience_time)
+                data["experience_time"] = experience_time
+
+            start_datetime = timezone.make_aware(
+                timezone.datetime.combine(experience.event_date, experience.start)
+            )
+            end_datetime = timezone.make_aware(
+                timezone.datetime.combine(experience.event_date, experience.end)
+            )
+
+            if not (start_datetime <= experience_time <= end_datetime):
+                raise serializers.ValidationError(
+                    f"Experience time must be between {experience.start} and {experience.end}."
+                )
+        guest_count = data.get("guests")   
+        if experience.max_participants is not None:
+            current_guest_count = Booking.objects.filter(
+                experience=experience
+            ).aggregate(total=Sum('guests'))['total'] or 0
+            if current_guest_count + guest_count > experience.max_participants:
+                raise serializers.ValidationError(
+                    f"Booking exceeds the maximum participants limit ({experience.max_participants})."
+                )    
+        return data
+
+
 class PublicBookingSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -48,3 +92,11 @@ class PublicBookingSerializer(serializers.ModelSerializer):
             "experience_time",
             "guests",
         )
+
+class ExperienceBookingDetailSerializer(serializers.ModelSerializer):
+
+    user = TinyUserSerializer(read_only=True)
+
+    class Meta:
+        model = Booking
+        exclude = ("room", "check_in", "check_out", "kind", "experience")

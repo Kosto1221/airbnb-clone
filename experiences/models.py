@@ -1,5 +1,6 @@
 from django.db import models
 from common.models import CommonModel
+from datetime import date
 
 
 class Experience(CommonModel):
@@ -26,8 +27,14 @@ class Experience(CommonModel):
     address = models.CharField(
         max_length=250,
     )
+    event_date = models.DateField(default=date.today)
     start = models.TimeField()
     end = models.TimeField()
+    is_public = models.BooleanField(
+        default=True,
+        help_text="Allow multiple bookings"
+    )
+    max_participants = models.PositiveIntegerField(null=True, blank=True)
     description = models.TextField()
     perks = models.ManyToManyField(
         "experiences.Perk",
@@ -37,7 +44,28 @@ class Experience(CommonModel):
 
     def __str__(self) -> str:
         return self.name
-
+    
+    def total_perks(self):
+        return self.perks.count()
+    
+    def rating(self):
+        count = self.reviews.count()
+        if count == 0:
+            return 0
+        else: 
+            total_rating = 0
+            for review in self.reviews.all().values("rating"):
+                total_rating += review["rating"]
+            return round(total_rating / count, 2)
+        
+    def booking_rate(self):
+        if self.max_participants != None:
+            head_count = 0
+            for booking in self.bookings.all().values("guests"):
+                head_count += booking["guests"]
+            return f"{head_count} out of {self.max_participants} booked"
+        else:
+            return "No attendee cap"
 
 class Perk(CommonModel):
 
