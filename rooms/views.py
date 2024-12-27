@@ -14,6 +14,7 @@ from bookings.models import Booking
 from bookings.serializers import PublicBookingSerializer, CreateRoomBookingSerializer
 from django.utils import timezone
 from reviews import serializers as reviews_serializer
+import time
 
 class Amenities(APIView):
     def get(self, request):
@@ -115,6 +116,7 @@ class RoomDetail(APIView):
             raise NotFound
 
     def get(self, request, pk):
+        time.sleep(10)
         room = self.get_object(pk)
         serializer = serializers.RoomDetailSerializer(room, context={"request": request},)
         return Response(serializer.data)
